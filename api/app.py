@@ -35,6 +35,9 @@ class ImageURL(BaseModel):
 class AudioURL(BaseModel):
     url: str
 
+class EmbeddingRequest(BaseModel):
+    input_text: str
+
 # Set API keys from environment variables
 aai.settings.api_key = os.getenv("ASSEMBLYAI_API_KEY")  # AssemblyAI API key
 if not aai.settings.api_key:
@@ -306,7 +309,7 @@ async def transcribe_uploaded_audio(file: UploadFile = File(...)):
             # Read the file data
             audio_data = await file.read()
             
-            # Check if the file is empty
+            # Check if the file is empty or corrupted
             if not audio_data or len(audio_data) < 100:
                 raise HTTPException(status_code=400, detail="Uploaded file is empty or corrupted.")
             
@@ -351,6 +354,53 @@ async def transcribe_audio_from_url(audio_data: AudioURL):
         raise http_exc
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/generate-embedding")
+async def generate_embedding(request: EmbeddingRequest):
+    """
+    API endpoint that accepts input text in the request body and returns the vector embedding
+    using the Mistral 'mistral-embed' model.
+    """
+    try:
+        input_text = request.input_text
+
+        # Define the Mistral API endpoint and headers
+        url = "https://api.mistral.ai/v1/embeddings"
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {MISTRAL_API_KEY}"
+        }
+
+        # Prepare the payload
+        payload = {
+            "model": "mistral-embed",
+            "input": input_text
+        }
+
+        # Make the API request
+        response = requests.post(url, json=payload, headers=headers)
+
+        # Check for errors in the response
+        if response.status_code != 200:
+            raise HTTPException(status_code=response.status_code, detail=f"Embedding API call failed: {response.text}")
+
+        # Parse the response JSON
+        response_json = response.json()
+        if "data" not in response_json or len(response_json["data"]) == 0:
+            raise HTTPException(status_code=500, detail="Invalid response from embedding API.")
+
+        # Extract the embedding vector
+        embedding = response_json["data"][0]["embedding"]
+
+        # Return the embedding vector and its length
+        return {"embedding": embedding, "length": len(embedding)}
+
+    except HTTPException as http_exc:
+        # Return HTTP exceptions as-is
+        raise http_exc
+    except Exception as e:
+        # Handle unexpected errors
+        raise HTTPException(status_code=500, detail=f"An error occurred while generating the embedding: {str(e)}")
 
 @app.get("/")
 async def root():
