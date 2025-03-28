@@ -351,3 +351,10 @@ async def transcribe_audio_from_url(audio_data: AudioURL):
         raise http_exc
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/")
+async def root():
+    """
+    Base endpoint to display a message indicating the server is running.
+    """
+    return {"message": "Server is running"}
