@@ -5,3 +5,4 @@ requests
 textblob
 python-dotenv
 assemblyai
+python-multipart
