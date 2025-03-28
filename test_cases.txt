@@ -1,0 +1,12 @@
+#the test cases are for content improvement endpoint
+
+curl -X POST "https://crispy-space-pancake-9rgw7vqvx6pf79q6-8000.app.github.dev/process-complaint" -H "Content-Type: application/json" -d '{"description": "The product no work it bad very wet dripping i is disappointed"}'
+curl -X POST "https://crispy-space-pancake-9rgw7vqvx6pf79q6-8000.app.github.dev/process-complaint" -H "Content-Type: application/json" -d '{"description": "The product no work it bad very wet dripping i is disappointed extreme unsatisfy you bad"}'
+
+#test cases for image description using url 
+curl -X POST "https://crispy-space-pancake-9rgw7vqvx6pf79q6-8000.app.github.dev/describe-image/url" \
+-H "Content-Type: application/json" \
+-d '{"url": "https://s1.dmcdn.net/v/BMQEu1LxYE-7jRp6-/x1080"}'
+
+
+#test cases for image using file 
