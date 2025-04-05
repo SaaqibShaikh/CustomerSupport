@@ -402,6 +402,82 @@ async def generate_embedding(request: EmbeddingRequest):
         # Handle unexpected errors
         raise HTTPException(status_code=500, detail=f"An error occurred while generating the embedding: {str(e)}")
 
+@app.post("/prioritize")
+async def prioritize_complaint(complaint: RawComplaint):
+    """
+    API endpoint that accepts a complaint description and assigns a priority level
+    by calling the Mistral LLM model.
+    """
+    try:
+        # Define the Mistral API endpoint and headers
+        url = "https://api.mistral.ai/v1/chat/completions"
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {MISTRAL_API_KEY}"
+        }
+
+        # Define the system prompt
+        system_prompt = """
+        You are an intelligent customer service assistant helping triage user complaints for a support team.
+
+        Your task is to read each complaint and assign it a priority level from 1 to 5, where:
+
+        1 = Critical (requires immediate attention)
+        2 = High (urgent but not life-threatening or business-breaking)
+        3 = Medium (needs to be addressed but can wait)
+        4 = Low (minor inconvenience or general feedback)
+        5 = Very Low (informational or non-actionable)
+
+        Take into account:
+        - Customer frustration (anger, strong emotion)
+        - Safety, security, legal issues
+        - Financial loss or repeated charges
+        - Service outages or failures
+        - Delay time mentioned
+        - Keywords like “urgent,” “immediately,” “threat,” “not working,” “lost,” “cancel,” etc.
+        """
+
+        # Define the user prompt
+        user_prompt = f"""
+        Complaint: "{complaint.description}"
+
+        Assign a priority level (1 to 5) and explain your reasoning.
+        """
+
+        # Prepare the payload
+        payload = {
+            "model": "mistral-8b-latest",
+            "messages": [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt}
+            ]
+        }
+
+        # Make the API request
+        response = requests.post(url, json=payload, headers=headers)
+
+        # Check for errors in the response
+        if response.status_code != 200:
+            raise HTTPException(status_code=response.status_code, detail=f"LLM API call failed: {response.text}")
+
+        # Parse the response JSON
+        response_json = response.json()
+        if "choices" not in response_json or len(response_json["choices"]) == 0:
+            raise HTTPException(status_code=500, detail="Invalid response from LLM API.")
+
+        # Extract the priority and reasoning from the response
+        result = response_json["choices"][0]["message"]["content"].strip()
+
+        # Return the priority and reasoning
+        return {"priority": result}
+
+    except HTTPException as http_exc:
+        # Return HTTP exceptions as-is
+        raise http_exc
+    except Exception as e:
+        # Handle unexpected errors
+        raise HTTPException(status_code=500, detail=f"An error occurred while prioritizing the complaint: {str(e)}")
+
 @app.get("/")
 async def root():
     """
