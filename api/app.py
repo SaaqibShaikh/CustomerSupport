@@ -434,7 +434,6 @@ async def prioritize_complaint(complaint: RawComplaint):
         - Financial loss or repeated charges
         - Service outages or failures
         - Delay time mentioned
-        - Keywords like “urgent,” “immediately,” “threat,” “not working,” “lost,” “cancel,” etc.
         """
 
         # Define the user prompt
