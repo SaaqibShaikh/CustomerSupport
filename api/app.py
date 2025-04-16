@@ -445,7 +445,7 @@ async def prioritize_complaint(complaint: RawComplaint):
 
         # Prepare the payload
         payload = {
-            "model": "mistral-8b-latest",
+            "model": "ministral-8b-latest",
             "messages": [
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt}
