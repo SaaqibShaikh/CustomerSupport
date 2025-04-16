@@ -422,20 +422,15 @@ async def prioritize_complaint(complaint: RawComplaint):
 
         Your task is to read each complaint and assign it a priority level from 1 to 5, where:
 
-        1 = Critical (requires immediate attention)
-        2 = High (urgent but not life-threatening or business-breaking)
-        3 = Medium (needs to be addressed but can wait)
-        4 = Low (minor inconvenience or general feedback)
+        1 = Critical (requires immediate attention)  
+        2 = High (urgent but not life-threatening or business-breaking)  
+        3 = Medium (needs to be addressed but can wait)  
+        4 = Low (minor inconvenience or general feedback)  
         5 = Very Low (informational or non-actionable)
 
-        Take into account:
-        - Customer frustration (anger, strong emotion)
-        - Safety, security, legal issues
-        - Financial loss or repeated charges
-        - Service outages or failures
-        - Delay time mentioned
+        Respond with only the priority level as a single digit integer (1 to 5) with no explanation, no markdown, and no extra text.
         """
-
+        
         # Define the user prompt
         user_prompt = f"""
         Complaint: "{complaint.description}"
@@ -465,10 +460,20 @@ async def prioritize_complaint(complaint: RawComplaint):
             raise HTTPException(status_code=500, detail="Invalid response from LLM API.")
 
         # Extract the priority and reasoning from the response
-        result = response_json["choices"][0]["message"]["content"].strip()
+        # Extract and clean the response content
+        result_text = response_json["choices"][0]["message"]["content"].strip()
 
-        # Return the priority and reasoning
-        return {"priority": result}
+        # Validate and convert the output to an integer in range 1–5
+        try:
+            priority = int(result_text)
+            if priority < 1 or priority > 5:
+                raise ValueError("Priority out of range")
+        except ValueError:
+            raise HTTPException(status_code=500, detail=f"Invalid priority value returned: '{result_text}'")
+
+        # Return only the integer
+        return {"priority": priority}
+
 
     except HTTPException as http_exc:
         # Return HTTP exceptions as-is
